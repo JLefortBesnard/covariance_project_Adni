@@ -544,3 +544,57 @@ return_all_plot(df_FS_ss)
 plt.close('all')
 
 
+
+###############################
+### CHECKING LOUVAIN COMMUs ###
+###############################
+
+def niftiise_louvain_community(df_cov, saving_path=None):
+	''' Compute network graph, then louvain community
+	and save as nifti image
+	
+	Parameters
+	----------
+	df_cov : pandas dataframe of the covariance matrix (n_roi*n_roi)
+
+	saving_path : str
+		if not None, saved at the given path as .nii
+
+	'''
+	# reload atlas
+	atlas = ds.fetch_atlas_harvard_oxford('cort-maxprob-thr25-2mm',  symmetric_split=True)
+	labels = atlas.labels[1:]
+	# compute the best partition
+	G = nx.from_numpy_matrix(df_cov.values)  
+	nx.draw(G, with_labels=True) 
+	partition = community.best_partition(G, random_state=0)
+	atlas_nii = atlas.maps
+	voxelData = atlas_nii.get_data()
+	for ind, label in enumerate(labels):
+		voxelData[voxelData == ind + 1] = partition[ind] + 100 # +100 to prevent from mix between roi value and partition number
+	nb_partition = np.unique(list(partition.values())).__len__()
+	for nb in range(nb_partition):
+		voxelData[voxelData == 100 + nb] = nb + 1 # get back to partition number from 1 to nb of partition
+	# save a nifiti image
+	partition_nifti = nib.Nifti1Image(
+		voxelData, affine=atlas_nii.affine)
+	partition_nifti.to_filename(saving_path) # transform as nii and save
+
+	print("nb of partition = ", nb_partition)
+	print("unique partition in final nifti file = ", np.unique(voxelData))
+
+df_ledoiwolf_cov = pd.read_excel("CN/ledoiwolf_cov.xlsx")
+df_ledoiwolf_cov = df_ledoiwolf_cov.set_index('Unnamed: 0')
+niftiise_louvain_community(df_ledoiwolf_cov, saving_path="CN/ledoiwolf_cov_partition_nifti.nii")
+
+df_ledoiwolf_prec = pd.read_excel("CN/ledoiwolf_prec.xlsx")
+df_ledoiwolf_prec = df_ledoiwolf_prec.set_index('Unnamed: 0')
+niftiise_louvain_community(df_ledoiwolf_prec, saving_path="CN/ledoiwolf_prec_partition_nifti.nii")
+
+df_pearson = pd.read_excel("CN/pearson.xlsx")
+df_pearson = df_pearson.set_index('Unnamed: 0')
+niftiise_louvain_community(df_pearson, saving_path="CN/pearson_partition_nifti.nii")
+
+df_cov = pd.read_excel("CN/cov.xlsx")
+df_cov = df_cov.set_index('Unnamed: 0')
+niftiise_louvain_community(df_cov, saving_path="CN/cov_partition_nifti.nii")

@@ -263,13 +263,13 @@ def plot_tif_info(df):
 	ax = sns.pairplot(data, hue='sex', kind='reg')
 	ax.fig.text(0.65, 0.85,"Age-TIV p={}".format(pvalAgeTIV), fontsize=9)
 	ax.fig.text(0.65, 0.77,"Sex-TIV p={}".format(pvalSexTIV), fontsize=9)
-	plt.savefig("SMC/smc_agesextiv.png")
+	plt.savefig("lMCI/lMCI_agesextiv.png")
 	plt.show()
 
 	ax = sns.violinplot(x="sex", y="TIV",
 	                    data=data, palette="Set2", split=True,
 	                    scale="count", inner="stick", scale_hue=False)
-	plt.savefig("SMC/smc_sextiv.png")
+	plt.savefig("lMCI/lMCI_sextiv.png")
 	plt.show()
 
 	# all in
@@ -288,7 +288,7 @@ def plot_tif_info(df):
 	ax.fig.text(0.65, 0.75,"Sex-TIV_gm p={}".format(pvalSexTIVgm), fontsize=9)
 	ax.fig.text(0.65, 0.73,"Sex-TIV_wm p={}".format(pvalSexTIVwm), fontsize=9)
 	ax.fig.text(0.65, 0.71,"Sex-TIV_lcr p={}".format(pvalSexTIVlcr), fontsize=9)
-	plt.savefig("SMC/smc_agesextiv_details.png")
+	plt.savefig("lMCI/lMCI_agesextiv_details.png")
 	plt.show()
 
 
@@ -513,18 +513,18 @@ def louvainize(df_cov, title,saving_path=None):
 				louvain[i] = df_cov.values[key]
 				labels_new_order.append(labels[key])
 				i += 1
-	# check positionning from original matrix to louvain matrix
+	# check positionning from original matrix to louvain matri
 	# get index of first roi linked to community 0
 	index_roi_com0_louvain = list(partition.values()).index(0)
-	# get nb of roi in community 0 (used to double checking)
+	# get nb of roi in community 0
 	nb_com0 = np.unique(list(partition.values()), return_counts=True)[1][0]
-	# get index of first roi linked to community 1
+	# # get index of first roi linked to community 1
 	index_roi_com1_louvain = list(partition.values()).index(1)
 	assert louvain[0].sum() == df_cov.values[index_roi_com0_louvain].sum()
 	assert louvain[nb_com0].sum() == df_cov.values[index_roi_com1_louvain].sum() 
 
 	df_louvain = pd.DataFrame(index=labels_new_order, columns=labels_new_order, data=louvain)
-	df_louvain.to_excel("SMC/df_{}.xlsx".format(title))
+	df_louvain.to_excel("lMCI/df_{}.xlsx".format(title))
 	plot_matrice(df_louvain, labels_new_order, title, saving_path=saving_path, show=0)
 	
 
@@ -545,39 +545,35 @@ def return_all_plot(df_FS):
 	matrix = LedoitWolf().fit(df_FS)
 	cov = matrix.covariance_
 	df_ledoit_cov = pd.DataFrame(index=labels, columns=labels, data=cov)
-	df_ledoit_cov.to_excel("SMC/ledoiwolf_cov.xlsx")
-	plot_matrice(df_ledoit_cov, labels, "ledoiwolf_cov", saving_path="SMC/ledoiwolf_cov.png", show=0)
-	louvainize(df_ledoit_cov, "Louvain_LedoitWolf", "SMC/Louvain_LedoitWolf.png")
+	df_ledoit_cov.to_excel("lMCI/ledoiwolf_cov.xlsx")
+	plot_matrice(df_ledoit_cov, labels, "ledoiwolf_cov", saving_path="lMCI/ledoiwolf_cov.png", show=0)
+	louvainize(df_ledoit_cov, "Louvain_LedoitWolf", "lMCI/Louvain_LedoitWolf.png")
 
 
 
 	prec = matrix.precision_
 	df_prec = pd.DataFrame(index=labels, columns=labels, data=prec)
-	df_prec.to_excel("SMC/ledoiwolf_prec.xlsx")
-	plot_matrice(df_prec, labels, "ledoiwolf_prec", saving_path="SMC/ledoiwolf_prec.png", show=0)
-	louvainize(df_prec, "Louvain_LedoitWolf_prec", "SMC/Louvain_LedoitWolf_prec.png")
+	df_prec.to_excel("lMCI/ledoiwolf_prec.xlsx")
+	plot_matrice(df_prec, labels, "ledoiwolf_prec", saving_path="lMCI/ledoiwolf_prec.png", show=0)
+	louvainize(df_prec, "Louvain_LedoitWolf_prec", "lMCI/Louvain_LedoitWolf_prec.png")
 
 	# pearson
 	pearson = np.corrcoef(df_FS.values.T)
 	df_pearson = pd.DataFrame(index=labels, columns=labels, data=pearson)
-	df_pearson.to_excel("SMC/pearson.xlsx")
-	plot_matrice(df_pearson, labels, "pearson", saving_path="SMC/pearson.png", show=0)
-	louvainize(df_pearson, "Louvain_Pearson", "SMC/Louvain_Pearson.png")
+	df_pearson.to_excel("lMCI/pearson.xlsx")
+	plot_matrice(df_pearson, labels, "pearson", saving_path="lMCI/pearson.png", show=0)
+	louvainize(df_pearson, "Louvain_Pearson", "lMCI/Louvain_Pearson.png")
 
 	# covariance
 	cov = np.cov(df_FS.values.T)
 	df_cov = pd.DataFrame(index=labels, columns=labels, data=cov)
-	df_cov.to_excel("SMC/cov.xlsx")
-	plot_matrice(df_cov, labels, "cov", saving_path="SMC/cov.png", show=0)
-	louvainize(df_cov, "Louvain_cov", "SMC/Louvain_cov.png")
+	df_cov.to_excel("lMCI/cov.xlsx")
+	plot_matrice(df_cov, labels, "cov", saving_path="lMCI/cov.png", show=0)
+	louvainize(df_cov, "Louvain_cov", "lMCI/Louvain_cov.png")
 
-
-###############################
-### LAUNCH THE FULL PROCESS ###
-###############################
 
 # extract all file from folder
-files = glob.glob('C:\\Users\\lefortb211\\Downloads\\ADNI_SMC_smwc\\*')
+files = glob.glob('C:\\Users\\lefortb211\\Downloads\\ADNI_lMCI_smwc\\*')
 # Sort and store nifti paths of gm, wm, and lcr into a dataframe
 df = dataframize_nii_paths(files)
 # compute TIV and store it in the df
@@ -585,7 +581,7 @@ df = compute_store_tiv(df)
 # list most extrame values for TIV, tiv gm, tiv wm, tiv lcr
 outliers = list_outliers(df)
 # add age group and sex information
-df_demog = pd.read_csv("SMC/SMC_MPRAGE_6_02_2021.csv")
+df_demog = pd.read_csv("lMCI/lMCI_3T_6_23_2021.csv")
 df_demog = df_demog[['Subject', 'Group', 'Sex', 'Age']] # subject, group, sex, age
 df_demog = df_demog.set_index('Subject')
 df = merge_df_by_index(df, df_demog)
@@ -599,13 +595,14 @@ plot_tif_info(df)
 atlas = ds.fetch_atlas_harvard_oxford('cort-maxprob-thr25-2mm',  symmetric_split=True)
 labels = atlas.labels[1:]
 nb_rois = len(labels)
-df_FS = fit_atlas(atlas, df, saving_path='SMC/df_FS.xlsx', labels=labels)
+df_FS = fit_atlas(atlas, df, saving_path='lMCI/df_FS.xlsx', labels=labels)
 # standardize values
 df_FS_ss = pd.DataFrame(columns=df_FS.columns, index=df_FS.index, data=StandardScaler().fit_transform(df_FS.values))
 info = df[['TIV', 'TIV_gm', 'TIV_wm', 'TIV_lcr', 'Group', 'Sex', 'Age', 'ADNI_MEM', 'ADNI_EF']]
 df = merge_df_by_index(info, df_FS_ss)
 return_all_plot(df_FS_ss)
 plt.close('all')
+
 
 
 ###############################
@@ -646,109 +643,18 @@ def niftiise_louvain_community(df_cov, saving_path=None):
 	print("nb of partition = ", nb_partition)
 	print("unique partition in final nifti file = ", np.unique(voxelData))
 
-df_ledoiwolf_cov = pd.read_excel("SMC/ledoiwolf_cov.xlsx")
+df_ledoiwolf_cov = pd.read_excel("lMCI/ledoiwolf_cov.xlsx")
 df_ledoiwolf_cov = df_ledoiwolf_cov.set_index('Unnamed: 0')
-niftiise_louvain_community(df_ledoiwolf_cov, saving_path="SMC/ledoiwolf_cov_partition_nifti.nii")
+niftiise_louvain_community(df_ledoiwolf_cov, saving_path="lMCI/ledoiwolf_cov_partition_nifti.nii")
 
-df_ledoiwolf_prec = pd.read_excel("SMC/ledoiwolf_prec.xlsx")
+df_ledoiwolf_prec = pd.read_excel("lMCI/ledoiwolf_prec.xlsx")
 df_ledoiwolf_prec = df_ledoiwolf_prec.set_index('Unnamed: 0')
-niftiise_louvain_community(df_ledoiwolf_prec, saving_path="SMC/ledoiwolf_prec_partition_nifti.nii")
+niftiise_louvain_community(df_ledoiwolf_prec, saving_path="lMCI/ledoiwolf_prec_partition_nifti.nii")
 
-df_pearson = pd.read_excel("SMC/pearson.xlsx")
+df_pearson = pd.read_excel("lMCI/pearson.xlsx")
 df_pearson = df_pearson.set_index('Unnamed: 0')
-niftiise_louvain_community(df_pearson, saving_path="SMC/pearson_partition_nifti.nii")
+niftiise_louvain_community(df_pearson, saving_path="lMCI/pearson_partition_nifti.nii")
 
-df_cov = pd.read_excel("SMC/cov.xlsx")
+df_cov = pd.read_excel("lMCI/cov.xlsx")
 df_cov = df_cov.set_index('Unnamed: 0')
-niftiise_louvain_community(df_cov, saving_path="SMC/cov_partition_nifti.nii")
-
-
-
-"""
-plt.scatter(df_FS[0].values, df_FS[1].values)
-plt.show()
-cov_full = np.cov(df_FS[[0, 1]].values.T)
-
-plt.scatter(df_FS[47].values, df_FS[8].values)
-plt.show()
-
-
-X = (df_FS[0] - df_FS[0].mean())
-Y = (df_FS[1] - df_FS[1].mean())
-XY = X*Y
-
-
-
-atlas = ds.fetch_atlas_harvard_oxford('cort-maxprob-thr25-2mm')
-atlas_name = 'HardvardOxford48'
-labels = atlas.labels[1:]
-
-atlas_filename = atlas.maps
-labels = atlas.labels
-
-tmp_nii = nib.load(df["greyMatter_path"].values[0])
-ratlas_nii = resample_img(
-  	atlas.maps, target_affine=tmp_nii.affine, interpolation='nearest')
-
-nii_path = df["greyMatter_path"].values[0]
-nii = nib.load(nii_path)
-masker = NiftiLabelsMasker(labels_img=atlas_filename, standardize=True, strategy='sum')
-cur_FS_standardized = masker.fit_transform(df["greyMatter_path"].values[0])
-print(cur_FS_standardized)
-
-masker = NiftiLabelsMasker(labels_img=atlas_filename, standardize=False, strategy='sum')
-cur_FS = masker.fit_transform(df["greyMatter_path"].values[0])
-print(cur_FS)
-
-from nilearn.input_data import NiftiMasker
-masker = NiftiMasker(atlas_filename, standardize=False, strategy='sum')
-cur_FS = masker.fit_transform(df["greyMatter_path"].values[0])
-print(cur_FS)
-
-
-nii_path = df["greyMatter_path"].values[0]
-from nilearn import plotting, image
-plotting.plot_img(nib.load(nii_path)).add_overlay(atlas_filename, cmap=plotting.cm.black_blue)
-plt.show()
-
-atlas = ds.fetch_atlas_harvard_oxford('cort-maxprob-thr25-1mm')
-roi_indices, roi_counts = np.unique(nib.load(atlas.maps).get_data(),
-                                    return_counts=True)
-roi_indices[1:] = roi_indices[1:] -1
-df_atlas = pd.DataFrame(data=roi_counts[1:].reshape(1, -1), columns=list(roi_indices[1:]), index=[0])
-df_signal = pd.DataFrame(data=data.reshape(1, -1), columns=list(roi_indices[1:]), index=[0])
-# data = np.array([12303.1875, 16736.268, 19729.988,3834.7788, 5156.6836,
-#   25262.857, 17859.344, 2172.268, 2975.4666, 3887.965, 11559.526,
-#   7946.9365, 2920.6965, 8325.903, 6372.8896, 16396.414, 8717.543,
-#    5986.618, 7951.0093,8347.704,29546.021,14261.189, 5318.1807,
-#    3576.5496,4958.3174,4044.6008, 11351.314, 8301.746, 7955.2715,
-#    18383.02,3267.3113, 12019.555, 5661.181, 2502.1284, 12087.895,
-#  3242.6895,7142.4023,6676.2314,7162.3286,2782.536, 7340.803,
-#   4361.9824,2191.4705,2225.8423,3706.6267, 913.7218, 13824.98])
-df_FS = pd.read_excel("FS_Harvard48ROI.xlsx", index_col='Unnamed: 0')
-sns.lineplot(data=df_signal[range(2,48)].T, palette="tab10", linewidth=2.5, legend=False)
-sns.lineplot(data=df_atlas[range(2,48)].T, palette="tab10", linewidth=1, legend=False)
-plt.show()
-
-# check covariance
-a = np.random.random_sample(75)
-b = np.random.random_sample(75)
-np.cov(a, b)
-
-X = (a - a.mean())
-Y = (b - b.mean())
-stda = np.std(a)
-stdb = np.std(b)
-stda * stdb
-XY = X*Y
-cov = XY.sum()/74
-
-df
-def plot_outliers(outliers_path):
-	plotting.plot_img(tmp_nii)
-	plt.show()
-
-files = glob.glob('C:\\Users\\lefortb211\\Downloads\\Adni\\*\\*\\*\\*\\*.nii')
-for i in range(5):
-	plotting.plot_img(files[i])
-"""
+niftiise_louvain_community(df_cov, saving_path="lMCI/cov_partition_nifti.nii")
