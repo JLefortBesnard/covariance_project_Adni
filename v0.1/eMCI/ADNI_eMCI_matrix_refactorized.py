@@ -19,7 +19,6 @@ import networkx as nx
 
 np.random.seed(0)
 
-
 def dataframize_nii_paths(files):
 	''' Sort and store nifti paths of gm, wm, and lcr into a dataframe
 
@@ -80,6 +79,7 @@ def merge_df_by_index(df, df_2, method='outer'):
 	print('{} duplicates were removed. Df shape = {}'.format(nb_duplicates, df_merged.shape))
 
 	return df_merged
+
 
 def compute_store_tiv(df):
 	''' compute TIV and store it in the df
@@ -262,13 +262,13 @@ def plot_tif_info(df):
 	ax = sns.pairplot(data, hue='sex', kind='reg')
 	ax.fig.text(0.65, 0.85,"Age-TIV p={}".format(pvalAgeTIV), fontsize=9)
 	ax.fig.text(0.65, 0.77,"Sex-TIV p={}".format(pvalSexTIV), fontsize=9)
-	plt.savefig("CN/cn_agesextiv.png")
+	plt.savefig("eMCI/eMCI_agesextiv.png")
 	plt.show()
 
 	ax = sns.violinplot(x="sex", y="TIV",
 	                    data=data, palette="Set2", split=True,
 	                    scale="count", inner="stick", scale_hue=False)
-	plt.savefig("CN/cn_sextiv.png")
+	plt.savefig("eMCI/eMCI_sextiv.png")
 	plt.show()
 
 	# all in
@@ -287,7 +287,7 @@ def plot_tif_info(df):
 	ax.fig.text(0.65, 0.75,"Sex-TIV_gm p={}".format(pvalSexTIVgm), fontsize=9)
 	ax.fig.text(0.65, 0.73,"Sex-TIV_wm p={}".format(pvalSexTIVwm), fontsize=9)
 	ax.fig.text(0.65, 0.71,"Sex-TIV_lcr p={}".format(pvalSexTIVlcr), fontsize=9)
-	plt.savefig("CN/cn_agesextiv_details.png")
+	plt.savefig("eMCI/eMCI_agesextiv_details.png")
 	plt.show()
 
 
@@ -464,7 +464,7 @@ def louvainize(df_cov, title,saving_path=None):
 	assert louvain[nb_com0].sum() == df_cov.values[index_roi_com1_louvain].sum() 
 
 	df_louvain = pd.DataFrame(index=labels_new_order, columns=labels_new_order, data=louvain)
-	df_louvain.to_excel("CN/df_{}.xlsx".format(title))
+	df_louvain.to_excel("eMCI/df_{}.xlsx".format(title))
 	plot_matrice(df_louvain, labels_new_order, title, saving_path=saving_path, show=0)
 	
 
@@ -485,35 +485,35 @@ def return_all_plot(df_FS):
 	matrix = LedoitWolf().fit(df_FS)
 	cov = matrix.covariance_
 	df_ledoit_cov = pd.DataFrame(index=labels, columns=labels, data=cov)
-	df_ledoit_cov.to_excel("CN/ledoiwolf_cov.xlsx")
-	plot_matrice(df_ledoit_cov, labels, "ledoiwolf_cov", saving_path="CN/ledoiwolf_cov.png", show=0)
-	louvainize(df_ledoit_cov, "Louvain_LedoitWolf", "CN/Louvain_LedoitWolf.png")
+	df_ledoit_cov.to_excel("eMCI/ledoiwolf_cov.xlsx")
+	plot_matrice(df_ledoit_cov, labels, "ledoiwolf_cov", saving_path="eMCI/ledoiwolf_cov.png", show=0)
+	louvainize(df_ledoit_cov, "Louvain_LedoitWolf", "eMCI/Louvain_LedoitWolf.png")
 
 
 
 	prec = matrix.precision_
 	df_prec = pd.DataFrame(index=labels, columns=labels, data=prec)
-	df_prec.to_excel("CN/ledoiwolf_prec.xlsx")
-	plot_matrice(df_prec, labels, "ledoiwolf_prec", saving_path="CN/ledoiwolf_prec.png", show=0)
-	louvainize(df_prec, "Louvain_LedoitWolf_prec", "CN/Louvain_LedoitWolf_prec.png")
+	df_prec.to_excel("eMCI/ledoiwolf_prec.xlsx")
+	plot_matrice(df_prec, labels, "ledoiwolf_prec", saving_path="eMCI/ledoiwolf_prec.png", show=0)
+	louvainize(df_prec, "Louvain_LedoitWolf_prec", "eMCI/Louvain_LedoitWolf_prec.png")
 
 	# pearson
 	pearson = np.corrcoef(df_FS.values.T)
 	df_pearson = pd.DataFrame(index=labels, columns=labels, data=pearson)
-	df_pearson.to_excel("CN/pearson.xlsx")
-	plot_matrice(df_pearson, labels, "pearson", saving_path="CN/pearson.png", show=0)
-	louvainize(df_pearson, "Louvain_Pearson", "CN/Louvain_Pearson.png")
+	df_pearson.to_excel("eMCI/pearson.xlsx")
+	plot_matrice(df_pearson, labels, "pearson", saving_path="eMCI/pearson.png", show=0)
+	louvainize(df_pearson, "Louvain_Pearson", "eMCI/Louvain_Pearson.png")
 
 	# covariance
 	cov = np.cov(df_FS.values.T)
 	df_cov = pd.DataFrame(index=labels, columns=labels, data=cov)
-	df_cov.to_excel("CN/cov.xlsx")
-	plot_matrice(df_cov, labels, "cov", saving_path="CN/cov.png", show=0)
-	louvainize(df_cov, "Louvain_cov", "CN/Louvain_cov.png")
+	df_cov.to_excel("eMCI/cov.xlsx")
+	plot_matrice(df_cov, labels, "cov", saving_path="eMCI/cov.png", show=0)
+	louvainize(df_cov, "Louvain_cov", "eMCI/Louvain_cov.png")
 
 
 # extract all file from folder
-files = glob.glob('C:\\Users\\lefortb211\\Downloads\\ADNI_CN_smwc\\*')
+files = glob.glob('C:\\Users\\lefortb211\\Downloads\\ADNI_eMCI_smwc\\*')
 # Sort and store nifti paths of gm, wm, and lcr into a dataframe
 df = dataframize_nii_paths(files)
 # compute TIV and store it in the df
@@ -521,7 +521,7 @@ df = compute_store_tiv(df)
 # list most extrame values for TIV, tiv gm, tiv wm, tiv lcr
 outliers = list_outliers(df)
 # add age group and sex information
-df_demog = pd.read_csv("CN/CN_3T_6_23_2021.csv")
+df_demog = pd.read_csv("eMCI/eMCI_3T_6_23_2021.csv")
 df_demog = df_demog[['Subject', 'Group', 'Sex', 'Age']] # subject, group, sex, age
 df_demog = df_demog.set_index('Subject')
 df = merge_df_by_index(df, df_demog)
@@ -529,19 +529,26 @@ df = merge_df_by_index(df, df_demog)
 df_executive = pd.read_excel("CN/score_ex.xlsx") 
 df_executive = df_executive.set_index('PTID')
 df = merge_df_by_index(df, df_executive)
+
+
+df_high = df[df['ADNI_EF'] >= df['ADNI_EF'].median()]
+df_low = df[df['ADNI_EF'] < df['ADNI_EF'].median()]
+dic['eMCI'] = [df_high['ADNI_EF'].values, df_low['ADNI_EF'].values]
+
 # plot relationships between tiv age and sex
 plot_tif_info(df)
 
 atlas = ds.fetch_atlas_harvard_oxford('cort-maxprob-thr25-2mm',  symmetric_split=True)
 labels = atlas.labels[1:]
 nb_rois = len(labels)
-df_FS = fit_atlas(atlas, df, saving_path='CN/df_FS.xlsx', labels=labels)
+df_FS = fit_atlas(atlas, df, saving_path='eMCI/df_FS.xlsx', labels=labels)
 # standardize values
 df_FS_ss = pd.DataFrame(columns=df_FS.columns, index=df_FS.index, data=StandardScaler().fit_transform(df_FS.values))
 info = df[['TIV', 'TIV_gm', 'TIV_wm', 'TIV_lcr', 'Group', 'Sex', 'Age', 'ADNI_MEM', 'ADNI_EF']]
 df = merge_df_by_index(info, df_FS_ss)
 return_all_plot(df_FS_ss)
 plt.close('all')
+
 
 
 
@@ -583,18 +590,18 @@ def niftiise_louvain_community(df_cov, saving_path=None):
 	print("nb of partition = ", nb_partition)
 	print("unique partition in final nifti file = ", np.unique(voxelData))
 
-df_ledoiwolf_cov = pd.read_excel("CN/ledoiwolf_cov.xlsx")
+df_ledoiwolf_cov = pd.read_excel("eMCI/ledoiwolf_cov.xlsx")
 df_ledoiwolf_cov = df_ledoiwolf_cov.set_index('Unnamed: 0')
-niftiise_louvain_community(df_ledoiwolf_cov, saving_path="CN/ledoiwolf_cov_partition_nifti.nii")
+niftiise_louvain_community(df_ledoiwolf_cov, saving_path="eMCI/ledoiwolf_cov_partition_nifti.nii")
 
-df_ledoiwolf_prec = pd.read_excel("CN/ledoiwolf_prec.xlsx")
+df_ledoiwolf_prec = pd.read_excel("eMCI/ledoiwolf_prec.xlsx")
 df_ledoiwolf_prec = df_ledoiwolf_prec.set_index('Unnamed: 0')
-niftiise_louvain_community(df_ledoiwolf_prec, saving_path="CN/ledoiwolf_prec_partition_nifti.nii")
+niftiise_louvain_community(df_ledoiwolf_prec, saving_path="eMCI/ledoiwolf_prec_partition_nifti.nii")
 
-df_pearson = pd.read_excel("CN/pearson.xlsx")
+df_pearson = pd.read_excel("eMCI/pearson.xlsx")
 df_pearson = df_pearson.set_index('Unnamed: 0')
-niftiise_louvain_community(df_pearson, saving_path="CN/pearson_partition_nifti.nii")
+niftiise_louvain_community(df_pearson, saving_path="eMCI/pearson_partition_nifti.nii")
 
-df_cov = pd.read_excel("CN/cov.xlsx")
+df_cov = pd.read_excel("eMCI/cov.xlsx")
 df_cov = df_cov.set_index('Unnamed: 0')
-niftiise_louvain_community(df_cov, saving_path="CN/cov_partition_nifti.nii")
+niftiise_louvain_community(df_cov, saving_path="eMCI/cov_partition_nifti.nii")

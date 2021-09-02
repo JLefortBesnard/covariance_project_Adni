@@ -26,6 +26,10 @@ def dataframize_nii_paths(files):
 	Parameters
 	----------
 	files : list of path to nifti images
+
+	Return
+	----------
+	df storing paths of gm, wm, and lcr with subject number
 	
 	'''
 	# Sort cortex, white matter and LCR file
@@ -66,6 +70,10 @@ def merge_df_by_index(df, df_2, method='outer'):
 	----------
 	df : pandas dataframe 
 	df_2 : pandas dataframe
+
+	Return
+	----------
+	df merged according to the method
 	
 	'''
 	df_merged = df.join(df_2, how=method)
@@ -81,13 +89,16 @@ def merge_df_by_index(df, df_2, method='outer'):
 
 	return df_merged
 
-
 def compute_store_tiv(df):
 	''' compute TIV and store it in the df
 
 	Parameters
 	----------
 	df : dataframe including the path of gm, wm and lcr per subject
+
+	Return
+	----------
+	df storing paths of gm, wm, and lcr, as well as TIV, tiv_gm, tiv_wm, and tiv_lcr with subject number
 	
 	'''
 	# create new columns to store the tiv
@@ -129,6 +140,7 @@ def compute_store_tiv(df):
 	assert '*' not in df.values, "A tiv value seems to be missing"
 	return df
 
+
 def list_outliers(df, percentile=5):
 	''' list participants with the lowest and highest tiv total, tiv gm, tiv wm and tiv lcr for
 	manual checking of the volumes.
@@ -140,6 +152,10 @@ def list_outliers(df, percentile=5):
 	percentile : int, optional
 		percentile to which extract the most extreme TIV values
 		Default=5.
+
+	Return
+	----------
+	dic of outliers
 	'''
 	outliers = {}
 	limit_above = 100 - percentile
@@ -154,7 +170,6 @@ def list_outliers(df, percentile=5):
 	outliers['below_TIV_wm'] = df['TIV_wm'][df['TIV_wm'] > np.percentile(df['TIV_wm'], limit_above, interpolation = 'midpoint')]
 	print(outliers)
 	return outliers
-
 
 
 ################################ CLASSICAL STATISTICS TIV AGE AND SEX #########################
@@ -263,13 +278,13 @@ def plot_tif_info(df):
 	ax = sns.pairplot(data, hue='sex', kind='reg')
 	ax.fig.text(0.65, 0.85,"Age-TIV p={}".format(pvalAgeTIV), fontsize=9)
 	ax.fig.text(0.65, 0.77,"Sex-TIV p={}".format(pvalSexTIV), fontsize=9)
-	plt.savefig("lMCI/lMCI_agesextiv.png")
+	plt.savefig("CN/cn_agesextiv.png")
 	plt.show()
 
 	ax = sns.violinplot(x="sex", y="TIV",
 	                    data=data, palette="Set2", split=True,
 	                    scale="count", inner="stick", scale_hue=False)
-	plt.savefig("lMCI/lMCI_sextiv.png")
+	plt.savefig("CN/cn_sextiv.png")
 	plt.show()
 
 	# all in
@@ -288,14 +303,14 @@ def plot_tif_info(df):
 	ax.fig.text(0.65, 0.75,"Sex-TIV_gm p={}".format(pvalSexTIVgm), fontsize=9)
 	ax.fig.text(0.65, 0.73,"Sex-TIV_wm p={}".format(pvalSexTIVwm), fontsize=9)
 	ax.fig.text(0.65, 0.71,"Sex-TIV_lcr p={}".format(pvalSexTIVlcr), fontsize=9)
-	plt.savefig("lMCI/lMCI_agesextiv_details.png")
+	plt.savefig("CN/cn_agesextiv_details.png")
 	plt.show()
 
 
 
 
 
-def fit_atlas(atlas, df, saving_path=None, strategy='sum', show=0, labels=None):
+def fit_atlas(df, strategy='sum', show=0):
 	''' masking of the nifti of the participant cortex to extract ROI from atlas.
 	
 	Parameters
@@ -315,7 +330,16 @@ def fit_atlas(atlas, df, saving_path=None, strategy='sum', show=0, labels=None):
 		plot the atlas onto the grey matter nifti file of the first subject to check the fit
 		Default=0
 
+
+	Return
+	----------
+	df with grey matter quantity per ROI
+
 	'''
+	# get atlas and labels
+	atlas = ds.fetch_atlas_harvard_oxford('cort-maxprob-thr25-2mm',  symmetric_split=True)
+	labels = atlas.labels[1:]
+
 	# extract grey matter volume for atlas ROI
 	atlas_filename = atlas.maps
 	# first subject nifti load to get affine and check mask fit
@@ -347,17 +371,14 @@ def fit_atlas(atlas, df, saving_path=None, strategy='sum', show=0, labels=None):
 	assert df_FS.iloc[-1].values.sum() == FS[-1].sum()
 	# remove duplicates
 	assert (df_FS.index.duplicated() == True).sum() == 0
-	# save if asked
-	if saving_path != None:
-		df_FS.to_excel(saving_path)
 	FS = None # empty memory
 	return df_FS
 
 
 
-def clean_signal(df, nb_rois, labels):
+def clean_signal(df, labels, confounds):
 	''' clean signal using nilearn.signal.clean function.
-	Regressed out variance that could be explained by the factors “age” and "TIV".
+	Regressed out variance that could be explained by the factors confounds.
 	
 	Parameters
 	----------
@@ -365,13 +386,20 @@ def clean_signal(df, nb_rois, labels):
 	plus a column for 'TIV' and for 'Age'.
 	It should also include a column for 'TIV_gm', 'TIV_wm', 'TIV_lcr', 'Group', 'Sex'.
 
-	nb_rois : the number of ROIs from the used atlas.
+	labels : roi labels to be cleaned
+
+	confounds : the variance from these element will be removed from the signal
+
+
+	Return
+	----------
+	df with grey matter per ROI cleaned from variance explained by confound
 	
 	'''
 	# extract signal
 	FS = df[labels].values
 	# extract confound
-	confounds = df[['TIV', 'Age']].values
+	confounds = df[confounds].values
 	# clean signal from confound explained variance
 	FS_cleaned = clean(FS, confounds=confounds, detrend=False)
 	# restore into a dataframe
@@ -386,7 +414,7 @@ def clean_signal(df, nb_rois, labels):
 
 
 
-def plot_matrice(df, labels, title, saving_path=None, show=1):
+def plot_matrice(df, title, cmap=None, with_labels=False, saving_path=None, show=1):
 	''' Plot the matrices
 	
 	Parameters
@@ -398,6 +426,10 @@ def plot_matrice(df, labels, title, saving_path=None, show=1):
 
 	title : str
 		Title for the plot
+
+	with_labels : bool
+		Display label or not on the figure
+		Default=False
 	
 	saving_path : str
 		Path to save the covariance matrix plot
@@ -409,12 +441,13 @@ def plot_matrice(df, labels, title, saving_path=None, show=1):
 	'''
 	sns.set_theme(style="white")
 	mask = np.triu(np.ones_like(df, dtype=bool))
-	f, ax = plt.subplots(figsize=(11, 9))
+	f, ax = plt.subplots(figsize=(7, 7))
 	# Generate a custom diverging colormap
-	cmap = sns.diverging_palette(230, 20, as_cmap=True)
+	if cmap == None:
+		cmap = sns.cubehelix_palette(start=0, rot=-.5, light=2.5, dark=0.4, as_cmap=True)
 	# Draw the heatmap with the mask and correct aspect ratio
-	sns.heatmap(df, mask=mask, cmap=cmap, center=0,
-            square=True, linewidths=.5, xticklabels=True, yticklabels=True, cbar_kws={"shrink": .5})
+	sns.heatmap(df, vmin=0, vmax=1, mask=mask, cmap=cmap, center=0,
+            square=True, linewidths=.5, xticklabels=with_labels, yticklabels=with_labels, cbar_kws={"shrink": .5})
 	plt.title(title)
 	plt.tight_layout()
 	if saving_path != None:
@@ -422,88 +455,45 @@ def plot_matrice(df, labels, title, saving_path=None, show=1):
 	if show == 1:
 		plt.show()
 
-def permutation_testing(df1, df2, model, nb_rois, prec=False, n_perm = 1000):
-	''' Permutation testing to check for significance between two covariation matrices
-	
-	Parameters
-	----------
-	df1 : pandas dataframe including the signal with ROIs numbered from 0 to len(nb_rois)
 
-	df2 : pandas dataframe including the signal with ROIs numbered from 0 to len(nb_rois)
-
-	model: function to apply to get the covariance, must be a .fit() method
-
-	nb_rois : the number of ROIs from the used atlas.
-	
-	labels : lst
-		atlas ROIs name
-
-	prec : Boolean
-		Compute the significance test for the precision matrix
-		if set to True, output contains 2 matrices, the cov and the prec significance matrix
-		Default=True
-	
-	n_perm : int
-		Permutation iteration number
-		Default=1000
-
-	'''
-	np.random.seed(0)
-	h_precs, h_covs = [], []
-	FS_1 = df1[range(nb_rois+1)].values # h0 distribution
-	FS_2 = df2[range(nb_rois+1)].values
-	n_low_samples = len(FS_1)
-	for p in range(n_perm):
-		print('Bootstrapping iteration: {}/{}'.format(p + 1, n_perm))
-		new_inds = np.random.randint(0, n_low_samples, n_low_samples)
-		bs_sample = FS_1[new_inds]
-		gsc_1 = model.fit(bs_sample)
-		h_covs.append(gsc_1.covariance_)
-		if prec==True:
-			h_precs.append(gsc_1.precision_)
-
-	tril_inds = np.tril_indices_from(h_covs[0])
-	margin = (1. / n_perm) * 100 / 2
-	covs_ravel = np.array([cov[tril_inds] for cov in h_covs])
-	cov_test_high = cov_high[tril_inds]
-	cov_sign1 = cov_test_high < np.percentile(covs_ravel, margin, axis=0)
-	cov_sign2 = cov_test_high > np.percentile(covs_ravel, 100 - margin, axis=0)
-	cov_sign = np.zeros_like(cov_high)
-	cov_sign[tril_inds] = np.logical_or(cov_sign1, cov_sign2)
-
-	if prec==True:
-		precs_ravel = np.array([prec[tril_inds] for prec in h_precs])
-		prec_test_high = prec_high[tril_inds]
-		prec_sign1 = prec_test_high < np.percentile(precs_ravel, margin, axis=0)
-		prec_sign2 = prec_test_high > np.percentile(precs_ravel, 100 - margin, axis=0)
-		prec_sign = np.zeros_like(prec_high)
-		prec_sign[tril_inds] = np.logical_or(prec_sign1, prec_sign2)
-		return cov_sign, prec_sign
-	
-	return cov_sign
-
-def louvainize(df_cov, title,saving_path=None):
-	''' Compute network graph, then louvain community
-	and reorganized it into a matrix, and plot it
+def compute_louvain_community(df_cov):
+	''' Compute network graph, then louvain community, save it,
+	then reorganized the covariance matrix by community and plot it
 
 	Parameters
 	----------
 	df_cov : pandas dataframe of the covariance matrix (n_roi*n_roi)
 
-	saving_path : str
-		if not None, saved at the given path
-
-	title : str
-		title for thz final matrix
+	Returns
+	----------
+	louvain community as dictionnary
 
 	'''
 	# compute the best partition
 	G = nx.from_numpy_matrix(df_cov.values)  
 	nx.draw(G, with_labels=True) 
 	partition = community.best_partition(G, random_state=0)
+	return partition
+
+
+def reorganize_with_louvain_community(df_cov, partition):
+	''' Reorganized the covariance matrix according to the partition
+
+	Parameters
+	----------
+	df_cov : pandas dataframe of the covariance matrix (n_roi*n_roi)
+
+	Returns
+	----------
+	Dataframe reorganized as louvain community 
+
+	'''
+	# compute the best partition
 	louvain = np.zeros(df_cov.values.shape).astype(df_cov.values.dtype)
 	labels = df_cov.columns
 	labels_new_order = []
+	
+	## reorganize matrix abscissa wise
 	i = 0
 	# iterate through all created community
 	for values in np.unique(list(partition.values())):
@@ -523,94 +513,40 @@ def louvainize(df_cov, title,saving_path=None):
 	assert louvain[0].sum() == df_cov.values[index_roi_com0_louvain].sum()
 	assert louvain[nb_com0].sum() == df_cov.values[index_roi_com1_louvain].sum() 
 
-	df_louvain = pd.DataFrame(index=labels_new_order, columns=labels_new_order, data=louvain)
-	df_louvain.to_excel("lMCI/df_{}.xlsx".format(title))
-	plot_matrice(df_louvain, labels_new_order, title, saving_path=saving_path, show=0)
+	df_louvain = pd.DataFrame(index=labels_new_order, columns=labels, data=louvain)
+
+	## reorganize matrix Ordinate wise
+	df_louvain = df_louvain[df_louvain.index]
+	return df_louvain
+
+
 	
 
-def return_all_plot(df_FS):
-	''' Compute covariance matrices and plot them
+def compute_pearson(df_FS):
+	''' Compute pearson correlation matrix, plot it, and save it
 	
 	Parameters
 	----------
 	df_FS : dataframe of the time series per ROI per subject.
 
+	saving_path : str
+		if not None, saved at the given path
+
+
+	Return
+	----------
+	df storing Pearson correlation matrix
+
 	'''
-	
-	# # clean for age and tiv
-	# df_FS_cleaned = clean_signal(df_FS, nb_rois, labels)
-
-	# ledoiwolf covariance
 	labels = df_FS.columns
-	matrix = LedoitWolf().fit(df_FS)
-	cov = matrix.covariance_
-	df_ledoit_cov = pd.DataFrame(index=labels, columns=labels, data=cov)
-	df_ledoit_cov.to_excel("lMCI/ledoiwolf_cov.xlsx")
-	plot_matrice(df_ledoit_cov, labels, "ledoiwolf_cov", saving_path="lMCI/ledoiwolf_cov.png", show=0)
-	louvainize(df_ledoit_cov, "Louvain_LedoitWolf", "lMCI/Louvain_LedoitWolf.png")
-
-
-
-	prec = matrix.precision_
-	df_prec = pd.DataFrame(index=labels, columns=labels, data=prec)
-	df_prec.to_excel("lMCI/ledoiwolf_prec.xlsx")
-	plot_matrice(df_prec, labels, "ledoiwolf_prec", saving_path="lMCI/ledoiwolf_prec.png", show=0)
-	louvainize(df_prec, "Louvain_LedoitWolf_prec", "lMCI/Louvain_LedoitWolf_prec.png")
-
-	# pearson
 	pearson = np.corrcoef(df_FS.values.T)
 	df_pearson = pd.DataFrame(index=labels, columns=labels, data=pearson)
-	df_pearson.to_excel("lMCI/pearson.xlsx")
-	plot_matrice(df_pearson, labels, "pearson", saving_path="lMCI/pearson.png", show=0)
-	louvainize(df_pearson, "Louvain_Pearson", "lMCI/Louvain_Pearson.png")
-
-	# covariance
-	cov = np.cov(df_FS.values.T)
-	df_cov = pd.DataFrame(index=labels, columns=labels, data=cov)
-	df_cov.to_excel("lMCI/cov.xlsx")
-	plot_matrice(df_cov, labels, "cov", saving_path="lMCI/cov.png", show=0)
-	louvainize(df_cov, "Louvain_cov", "lMCI/Louvain_cov.png")
+	return df_pearson
 
 
-# extract all file from folder
-files = glob.glob('C:\\Users\\lefortb211\\Downloads\\ADNI_lMCI_smwc\\*')
-# Sort and store nifti paths of gm, wm, and lcr into a dataframe
-df = dataframize_nii_paths(files)
-# compute TIV and store it in the df
-df = compute_store_tiv(df)
-# list most extrame values for TIV, tiv gm, tiv wm, tiv lcr
-outliers = list_outliers(df)
-# add age group and sex information
-df_demog = pd.read_csv("lMCI/lMCI_3T_6_23_2021.csv")
-df_demog = df_demog[['Subject', 'Group', 'Sex', 'Age']] # subject, group, sex, age
-df_demog = df_demog.set_index('Subject')
-df = merge_df_by_index(df, df_demog)
-# add executive scores (file -containing each diag info- in CN folder to avoid duplicates)
-df_executive = pd.read_excel("CN/score_ex.xlsx") 
-df_executive = df_executive.set_index('PTID')
-df = merge_df_by_index(df, df_executive)
-# plot relationships between tiv age and sex
-plot_tif_info(df)
-
-atlas = ds.fetch_atlas_harvard_oxford('cort-maxprob-thr25-2mm',  symmetric_split=True)
-labels = atlas.labels[1:]
-nb_rois = len(labels)
-df_FS = fit_atlas(atlas, df, saving_path='lMCI/df_FS.xlsx', labels=labels)
-# standardize values
-df_FS_ss = pd.DataFrame(columns=df_FS.columns, index=df_FS.index, data=StandardScaler().fit_transform(df_FS.values))
-info = df[['TIV', 'TIV_gm', 'TIV_wm', 'TIV_lcr', 'Group', 'Sex', 'Age', 'ADNI_MEM', 'ADNI_EF']]
-df = merge_df_by_index(info, df_FS_ss)
-return_all_plot(df_FS_ss)
-plt.close('all')
-
-
-
-###############################
-### CHECKING LOUVAIN COMMUs ###
-###############################
 
 def niftiise_louvain_community(df_cov, saving_path=None):
-	''' Compute network graph, then louvain community
+	''' Compute network graph, then louvain community, save the community and the
 	and save as nifti image
 	
 	Parameters
@@ -643,18 +579,52 @@ def niftiise_louvain_community(df_cov, saving_path=None):
 	print("nb of partition = ", nb_partition)
 	print("unique partition in final nifti file = ", np.unique(voxelData))
 
-df_ledoiwolf_cov = pd.read_excel("lMCI/ledoiwolf_cov.xlsx")
-df_ledoiwolf_cov = df_ledoiwolf_cov.set_index('Unnamed: 0')
-niftiise_louvain_community(df_ledoiwolf_cov, saving_path="lMCI/ledoiwolf_cov_partition_nifti.nii")
 
-df_ledoiwolf_prec = pd.read_excel("lMCI/ledoiwolf_prec.xlsx")
-df_ledoiwolf_prec = df_ledoiwolf_prec.set_index('Unnamed: 0')
-niftiise_louvain_community(df_ledoiwolf_prec, saving_path="lMCI/ledoiwolf_prec_partition_nifti.nii")
+def matrix_difference(df1, df2, n_perm=1000):
+	''' Compute non parametric hypothesis testing with permutation
+	
+	Parameters
+	----------
+	df1 : pandas dataframe including the signal with ROIs, serve as H0
 
-df_pearson = pd.read_excel("lMCI/pearson.xlsx")
-df_pearson = df_pearson.set_index('Unnamed: 0')
-niftiise_louvain_community(df_pearson, saving_path="lMCI/pearson_partition_nifti.nii")
+	df2 : pandas dataframe including the signal with ROIs
 
-df_cov = pd.read_excel("lMCI/cov.xlsx")
-df_cov = df_cov.set_index('Unnamed: 0')
-niftiise_louvain_community(df_cov, saving_path="lMCI/cov_partition_nifti.nii")
+	n_perm : int
+		Permutation iteration number
+		Default=1000
+
+	Return
+	----------
+	df storing matrix with significant values (1) of size n_roi*n_roi
+
+	'''
+
+	np.random.seed(0)
+	H0_pearson_matrices = []
+	FS_1 = df1.values # h0 distribution
+	FS_2 = df2.values
+
+	# compute pearson correlation matrix for df 1 and set it as H0 distribution
+	n_H0 = len(FS_1)
+	for p in range(n_perm):
+		print('Bootstrapping iteration: {}/{}'.format(p + 1, n_perm))
+		new_inds = np.random.randint(0, n_H0, n_H0)
+		bs_H0_sample = FS_1[new_inds]
+		bs_H0_pearson_matrix = np.corrcoef(bs_H0_sample.T)
+		H0_pearson_matrices.append(bs_H0_pearson_matrix)
+	H0_pearson_matrices.append(np.corrcoef(FS_1.T)) # add the original matrix
+
+	tril_inds = np.tril_indices_from(bs_H0_pearson_matrix, -1)
+	margin = (1. / n_perm) * 100 / 2 # p = 0.05
+
+	H0_pearson_vectors = np.array([pearson_matrix[tril_inds] for pearson_matrix in H0_pearson_matrices])
+	# compute pearson correlation matrix for df 2 to compare it with H0
+	H1_pearson_matrix = np.corrcoef(FS_2.T)
+	H1_pearson_vector = H1_pearson_matrix[tril_inds]
+	cov_sign1 = H1_pearson_vector < np.percentile(H0_pearson_vectors, margin, axis=0)
+	cov_sign2 = H1_pearson_vector > np.percentile(H0_pearson_vectors, 100 - margin, axis=0)
+	cov_sign = np.zeros_like(H1_pearson_matrix)
+	cov_sign[tril_inds] = np.logical_or(cov_sign1, cov_sign2)
+	print("{} significant results".format(cov_sign1.sum() + cov_sign2.sum()))
+	df_differences = pd.DataFrame(index=df1.columns, columns=df1.columns, data=cov_sign)
+	return df_differences
